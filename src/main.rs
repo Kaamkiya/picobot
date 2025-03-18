@@ -8,6 +8,7 @@ use matrix_sdk::{
 };
 use std::{env, process::exit, time::SystemTime};
 
+mod latex;
 mod quotes;
 mod xkcd;
 
@@ -26,6 +27,19 @@ async fn on_room_message(init_time: SystemTime, event: OriginalSyncRoomMessageEv
     }
 
     match iter.nth(0).unwrap() {
+        "latex" => {
+            let c: Vec<&str> = iter.collect();
+            let bytes = latex::render(c.concat()).await.unwrap();
+
+            room.send_attachment(
+                "latex.png",
+                &mime::IMAGE_PNG,
+                bytes,
+                AttachmentConfig::new(),
+            )
+            .await
+            .unwrap();
+        }
         "quote" => {
             let quote = quotes::random().await.unwrap();
             room.send(RoomMessageEventContent::text_plain(format!(
