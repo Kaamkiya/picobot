@@ -8,6 +8,7 @@ use matrix_sdk::{
 };
 use std::{env, process::exit, time::SystemTime};
 
+mod quotes;
 mod xkcd;
 
 async fn on_room_message(init_time: SystemTime, event: OriginalSyncRoomMessageEvent, room: Room) {
@@ -25,6 +26,15 @@ async fn on_room_message(init_time: SystemTime, event: OriginalSyncRoomMessageEv
     }
 
     match iter.nth(0).unwrap() {
+        "quote" => {
+            let quote = quotes::random().await.unwrap();
+            room.send(RoomMessageEventContent::text_plain(format!(
+                "{} - {}",
+                quote.content, quote.author
+            )))
+            .await
+            .unwrap();
+        }
         "uptime" => {
             let s = format!("{:#?}", init_time.elapsed().unwrap());
             room.send(RoomMessageEventContent::text_plain(s))
