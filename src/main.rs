@@ -1,11 +1,14 @@
 use matrix_sdk::{
     Client, Room, RoomState,
+    attachment::AttachmentConfig,
     config::SyncSettings,
     ruma::events::room::message::{
         MessageType, OriginalSyncRoomMessageEvent, RoomMessageEventContent,
     },
 };
 use std::{env, process::exit, time::SystemTime};
+
+mod xkcd;
 
 async fn on_room_message(init_time: SystemTime, event: OriginalSyncRoomMessageEvent, room: Room) {
     if room.state() != RoomState::Joined || event.sender == "@picovm:matrix.org" {
@@ -21,15 +24,42 @@ async fn on_room_message(init_time: SystemTime, event: OriginalSyncRoomMessageEv
         return;
     }
 
-    let content = match iter.nth(0).unwrap() {
+    match iter.nth(0).unwrap() {
         "uptime" => {
             let s = format!("{:#?}", init_time.elapsed().unwrap());
-            RoomMessageEventContent::text_plain(s)
+            room.send(RoomMessageEventContent::text_plain(s))
+                .await
+                .unwrap();
         }
-        _ => RoomMessageEventContent::text_plain("mmm... no such command."),
-    };
+        "xkcd" => {
+            let which = iter.next().unwrap_or("");
 
-    room.send(content).await.unwrap();
+            let data = match which {
+                "latest" => xkcd::latest().await.unwrap(),
+                "random" => xkcd::random().await.unwrap(),
+                "" => xkcd::latest().await.unwrap(),
+                "404" => xkcd::nth("405").await.unwrap(), // /404/info.0.json returns a 404 error.
+                _ => xkcd::nth(which).await.unwrap(),
+            };
+
+            room.send_attachment(
+                "xkcd.jpg",
+                &mime::IMAGE_JPEG,
+                data.imgcontent,
+                AttachmentConfig::new().caption(Some(format!(
+                    "{} #{} - {}/{}/{}",
+                    data.comic.title,
+                    data.comic.num,
+                    data.comic.year,
+                    data.comic.month,
+                    data.comic.day
+                ))),
+            )
+            .await
+            .unwrap();
+        }
+        _ => (),
+    };
 }
 
 async fn login_and_sync(
@@ -64,7 +94,7 @@ async fn login_and_sync(
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    //    tracing_subscriber::fmt::init();
 
     let (homeserver_url, username, password) =
         match (env::args().nth(1), env::args().nth(2), env::args().nth(3)) {
