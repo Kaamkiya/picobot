@@ -15,3 +15,16 @@ pub async fn random() -> Result<Quote, reqwest::Error> {
 
     Ok(quote)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_random() {
+        let quote = random().await.unwrap();
+
+        assert_ne!(quote.content, "");
+        assert_ne!(quote.author, "");
+    }
+}
