@@ -40,6 +40,15 @@ async fn on_room_message(init_time: SystemTime, event: OriginalSyncRoomMessageEv
             .await
             .unwrap();
         }
+        "md2html" => {
+            let c: Vec<&str> = iter.collect();
+
+            room.send(RoomMessageEventContent::text_plain(markdown::to_html(
+                c.concat().as_str(),
+            )))
+            .await
+            .unwrap();
+        }
         "quote" => {
             let quote = quotes::random().await.unwrap();
             room.send(RoomMessageEventContent::text_plain(format!(
