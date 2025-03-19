@@ -96,3 +96,54 @@ pub async fn nth(nth: &str) -> Result<Data, reqwest::Error> {
 
     Ok(data)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_nth() {
+        let data = nth("927").await.unwrap().comic;
+
+        assert_eq!(data.year, "2011");
+        assert_eq!(data.month, "7");
+        assert_eq!(data.day, "20");
+        assert_eq!(data.safe_title, "Standards");
+        assert_eq!(data.title, "Standards");
+        assert_eq!(data.img, "https://imgs.xkcd.com/comics/standards.png");
+        assert_eq!(data.link, "");
+        assert_eq!(data.news, "");
+        assert_eq!(
+            data.alt,
+            "Fortunately, the charging one has been solved now that we've all standardized on mini-USB. Or is it micro-USB? Shit."
+        );
+        assert_eq!(
+            data.transcript,
+            r#"HOW STANDARDS PROLIFERATE
+(See: A
+C chargers, character encodings, instant messaging, etc.)
+
+SITUATION:
+There are 14 competing standards.
+
+Geek: 14?! Ridiculous! We need to develop one universal standard that covers everyone's use cases.
+Fellow Geek: Yeah!
+
+Soon:
+SITUATION:
+There are 15 competing standards.
+
+{{Title text: Fortunately, the charging one has been solved now that we've all standardized on mini-USB. Or is it micro-USB? Shit.}}"#
+        );
+    }
+
+    #[tokio::test]
+    async fn test_random() {
+        let data = random().await.unwrap().comic;
+        let late = latest().await.unwrap().comic;
+
+        assert_ne!(data.num, late.num);
+        assert!(data.num > 0);
+        assert!(data.num < late.num);
+    }
+}
