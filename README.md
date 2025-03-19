@@ -15,6 +15,11 @@ A [Matrix](https://matrix.org) bot that does random, useless, fun things.
 
 * Brainf*** interpreter
 * Calculator
+* Dictionary
+* Thesaurus
+* Stock price
+* Time in different time zones/cities
+* Weather in different cities
 
 ## License
 
