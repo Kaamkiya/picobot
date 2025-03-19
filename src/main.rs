@@ -6,11 +6,18 @@ use matrix_sdk::{
         MessageType, OriginalSyncRoomMessageEvent, RoomMessageEventContent,
     },
 };
-use std::{env, process::exit, time::SystemTime};
+use std::{fs, time::SystemTime};
 
 mod latex;
 mod quotes;
 mod xkcd;
+
+#[derive(serde::Deserialize)]
+struct Conf {
+    username: String,
+    password: String,
+    homeserver: String,
+}
 
 async fn on_room_message(init_time: SystemTime, event: OriginalSyncRoomMessageEvent, room: Room) {
     if room.state() != RoomState::Joined || event.sender == "@picovm:matrix.org" {
@@ -129,18 +136,9 @@ async fn login_and_sync(
 async fn main() -> anyhow::Result<()> {
     //    tracing_subscriber::fmt::init();
 
-    let (homeserver_url, username, password) =
-        match (env::args().nth(1), env::args().nth(2), env::args().nth(3)) {
-            (Some(a), Some(b), Some(c)) => (a, b, c),
-            _ => {
-                eprintln!(
-                    "Usage: {} <homeserver_url> <username> <password>",
-                    env::args().next().unwrap()
-                );
-                exit(1)
-            }
-        };
+    let conf_str = fs::read_to_string("picobot.toml").expect("Failed to read config file.");
+    let conf: Conf = toml::from_str(&conf_str).expect("Failed to parse config file.");
 
-    login_and_sync(homeserver_url, username, password).await?;
+    login_and_sync(conf.homeserver, conf.username, conf.password).await?;
     Ok(())
 }
